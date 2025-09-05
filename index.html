@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本周两人耐放带饭计划</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: white;
+            color: black;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .control-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f5f5f5;
+        }
+        .leftover {
+            background-color: #fff9e6;
+            color: #e67e00;
+            font-weight: bold;
+        }
+        button {
+            padding: 6px 12px;
+            background-color: #4a86e8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #3a76d8;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .shopping-list {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .shopping-category {
+            flex: 1;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .shopping-category h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .shopping-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        #regenAll {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>本周两人耐放带饭计划（周一午→周五晚）</h1>
+    
+    <div class="control-panel">
+        <label>
+            <input type="checkbox" id="hasBraised"> 冰箱已有卤味
+        </label>
+        <button id="regenAll">全局换一批</button>
+    </div>
+    
+    <table id="meal-plan">
+        <thead>
+            <tr>
+                <th>星期</th>
+                <th>餐次</th>
+                <th>主菜(荤)</th>
+                <th>副菜(素)</th>
+                <th>操作</th>
+                <th>剩菜带饭</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 表格内容将通过JavaScript动态生成 -->
+        </tbody>
+    </table>
+    
+    <div class="shopping-list">
+        <div class="shopping-category">
+            <h3>肉类购物清单</h3>
+            <div id="meat-list"></div>
+        </div>
+        <div class="shopping-category">
+            <h3>蔬菜购物清单</h3>
+            <div id="vegetable-list"></div>
+        </div>
+        <div class="shopping-category">
+            <h3>调料购物清单</h3>
+            <div id="seasoning-list"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 定义菜品池
+            const meatDishes = [
+                {name: "咖喱肉末", meat: "猪肉 0.3斤", vegetable: "土豆 2个", seasoning: "咖喱块 1块 生抽 1勺", tip: "咖喱抗菌，肉末易热"},
+                {name: "番茄牛腩", meat: "牛腩 0.5斤", vegetable: "番茄 3个", seasoning: "八角 2个 香叶 2片 料酒 1勺", tip: "番茄酸性能抑制细菌"},
+                {name: "红三剁", meat: "猪肉 0.3斤", vegetable: "青椒 2个 番茄 2个", seasoning: "生抽 1勺 料酒 1勺", tip: "辣椒素抑制微生物"},
+                {name: "红烧排骨", meat: "排骨 0.6斤", vegetable: "", seasoning: "老抽 1勺 冰糖 10克 八角 2个", tip: "红烧高盐高糖耐存放"},
+                {name: "咖喱土豆鸡块", meat: "鸡腿 0.5斤", vegetable: "土豆 2个", seasoning: "咖喱块 1块 椰浆 50毫升", tip: "咖喱天然防腐"},
+                {name: "东坡肉方", meat: "五花肉 0.6斤", vegetable: "", seasoning: "老抽 1勺 黄酒 3勺 冰糖 15克", tip: "高脂高盐不易变质"},
+                {name: "卤鸡腿", meat: "鸡腿 0.6斤", vegetable: "", seasoning: "卤料包 1个 老抽 1勺", tip: "卤制工艺延长保鲜"},
+                {name: "酱香鸡翅", meat: "鸡翅 0.5斤", vegetable: "", seasoning: "甜面酱 2勺 蜂蜜 1勺", tip: "酱料高盐抑制细菌"},
+                {name: "可乐鸡翅", meat: "鸡翅 0.5斤", vegetable: "", seasoning: "可乐 200毫升 生抽 1勺", tip: "碳酸和糖有防腐作用"},
+                {name: "蜜汁叉烧", meat: "梅花肉 0.5斤", vegetable: "", seasoning: "叉烧酱 3勺 蜂蜜 1勺", tip: "蜜糖天然防腐剂"}
+            ];
+            
+            const vegetableDishes = [
+                {name: "咖喱土豆", meat: "", vegetable: "土豆 2个", seasoning: "咖喱块 1块 椰浆 50毫升", tip: "咖喱抗菌耐存放"},
+                {name: "红烧萝卜", meat: "", vegetable: "白萝卜 1根", seasoning: "老抽 1勺 糖 5克", tip: "萝卜烧制后耐放"},
+                {name: "卤海带结", meat: "", vegetable: "海带结 200克", seasoning: "卤汁 200毫升", tip: "卤制食品不易变质"},
+                {name: "油焖茄子", meat: "", vegetable: "茄子 2个", seasoning: "生抽 1勺 糖 5克", tip: "油封隔绝空气防变质"},
+                {name: "香菇烩豆腐", meat: "", vegetable: "香菇 5朵 豆腐 1块", seasoning: "蚝油 1勺 生抽 1勺", tip: "豆腐烩制后更耐放"},
+                {name: "西红柿烩花菜", meat: "", vegetable: "花菜 1个 番茄 1个", seasoning: "番茄酱 1勺 盐 3克", tip: "番茄酸性延长保鲜"},
+                {name: "酸豆角炒毛豆", meat: "", vegetable: "酸豆角 100克 毛豆 100克", seasoning: "干辣椒 3个 蒜 2瓣", tip: "发酵食品天然防腐"},
+                {name: "干锅包菜", meat: "", vegetable: "包菜 半个", seasoning: "干辣椒 5个 花椒 1勺", tip: "干锅脱水不易坏"},
+                {name: "地三鲜", meat: "", vegetable: "土豆 1个 茄子 1个 青椒 1个", seasoning: "生抽 1勺 老抽 半勺", tip: "过油处理延长保鲜期"},
+                {name: "红烧豆腐", meat: "", vegetable: "豆腐 1块", seasoning: "老抽 1勺 糖 5克", tip: "红烧做法耐存放"}
+            ];
+            
+            const braisedDishes = [
+                {name: "卤鸡腿", meat: "鸡腿 0.6斤", vegetable: "", seasoning: "卤料包 1个 老抽 1勺", tip: "卤制工艺延长保鲜"},
+                {name: "卤水鸭翅", meat: "鸭翅 0.5斤", vegetable: "", seasoning: "卤水 200毫升", tip: "卤水抗菌防变质"},
+                {name: "卤牛肉", meat: "牛腱子 0.6斤", vegetable: "", seasoning: "卤料包 1个 老抽 1勺", tip: "牛肉卤制后非常耐放"},
+                {name: "卤海带结", meat: "", vegetable: "海带结 200克", seasoning: "卤汁 200毫升", tip: "卤制食品不易变质"},
+                {name: "卤香菇", meat: "", vegetable: "干香菇 10朵", seasoning: "卤汁 200毫升", tip: "香菇吸味耐存放"},
+                {name: "卤豆干", meat: "", vegetable: "豆干 5块", seasoning: "卤汁 200毫升", tip: "豆干卤制后保质期长"}
+            ];
+            
+            // 当前周计划数据
+            let weeklyPlan = [];
+            let usedDishes = new Set();
+            
+            // DOM 元素
+            const planTable = document.getElementById('meal-plan');
+            const tbody = planTable.querySelector('tbody');
+            const meatList = document.getElementById('meat-list');
+            const vegetableList = document.getElementById('vegetable-list');
+            const seasoningList = document.getElementById('seasoning-list');
+            const regenAllBtn = document.getElementById('regenAll');
+            const hasBraisedCheckbox = document.getElementById('hasBraised');
+            
+            // 初始化
+            function init() {
+                generateWeeklyPlan();
+                renderTable();
+                updateShoppingList();
+                
+                // 绑定事件
+                regenAllBtn.addEventListener('click', function() {
+                    generateWeeklyPlan();
+                    renderTable();
+                    updateShoppingList();
+                });
+                
+                hasBraisedCheckbox.addEventListener('change', function() {
+                    generateWeeklyPlan();
+                    renderTable();
+                    updateShoppingList();
+                });
+            }
+            
+            // 生成周计划
+            function generateWeeklyPlan() {
+                weeklyPlan = [];
+                usedDishes.clear();
+                
+                const days = ['周一', '周二', '周三', '周四', '周五'];
+                const meals = ['午餐', '晚餐'];
+                const hasBraised = hasBraisedCheckbox.checked;
+                
+                for (let i = 0; i < days.length; i++) {
+                    for (let j = 0; j < meals.length; j++) {
+                        const isDinner = meals[j] === '晚餐';
+                        const isEarlyWeek = i < 3; // 周一到周三
+                        
+                        let meatDish, vegDish;
+                        
+                        // 选择主菜(荤)
+                        if (isDinner && isEarlyWeek && hasBraised && braisedDishes.length > 0) {
+                            meatDish = getRandomDish(braisedDishes, true);
+                        } else {
+                            meatDish = getRandomDish(meatDishes, false);
+                        }
+                        
+                        // 选择副菜(素)
+                        vegDish = getRandomDish(vegetableDishes, false);
+                        
+                        weeklyPlan.push({
+                            day: days[i],
+                            meal: meals[j],
+                            meatDish: meatDish,
+                            vegDish: vegDish,
+                            isLeftover: false
+                        });
+                    }
+                }
+                
+                // 处理剩菜逻辑
+                for (let i = 0; i < weeklyPlan.length; i++) {
+                    if (weeklyPlan[i].meal === '晚餐' && i < weeklyPlan.length - 1) {
+                        weeklyPlan[i+1].isLeftover = true;
+                        weeklyPlan[i+1].meatDish = weeklyPlan[i].meatDish;
+                        weeklyPlan[i+1].vegDish = weeklyPlan[i].vegDish;
+                        i++; // 跳过午餐
+                    }
+                }
+            }
+            
+            // 从菜品池中随机选择一道菜
+            function getRandomDish(pool, isBraised) {
+                if (pool.length === 0) {
+                    return {name: "暂无菜品", meat: "", vegetable: "", seasoning: "", tip: ""};
+                }
+                
+                let availableDishes;
+                if (isBraised) {
+                    availableDishes = braisedDishes.filter(dish => !usedDishes.has(dish.name));
+                } else {
+                    availableDishes = pool.filter(dish => !usedDishes.has(dish.name));
+                }
+                
+                if (availableDishes.length === 0) {
+                    // 如果所有菜都已使用，重置已用列表
+                    usedDishes.clear();
+                    availableDishes = [...pool];
+                }
+                
+                const randomIndex = Math.floor(Math.random() * availableDishes.length);
+                const selectedDish = availableDishes[randomIndex];
+                usedDishes.add(selectedDish.name);
+                
+                return selectedDish;
+            }
+            
+            // 渲染表格
+            function renderTable() {
+                tbody.innerHTML = '';
+                
+                weeklyPlan.forEach((plan, index) => {
+                    const row = document.createElement('tr');
+                    
+                    // 星期
+                    const dayCell = document.createElement('td');
+                    dayCell.textContent = plan.day;
+                    row.appendChild(dayCell);
+                    
+                    // 餐次
+                    const mealCell = document.createElement('td');
+                    mealCell.textContent = plan.meal;
+                    row.appendChild(mealCell);
+                    
+                    // 主菜(荤)
+                    const meatCell = document.createElement('td');
+                    meatCell.innerHTML = `${plan.meatDish.name} <span style="color: #666; font-size: 0.9em;">(${plan.meatDish.tip})</span>`;
+                    row.appendChild(meatCell);
+                    
+                    // 副菜(素)
+                    const vegCell = document.createElement('td');
+                    vegCell.innerHTML = `${plan.vegDish.name} <span style="color: #666; font-size: 0.9em;">(${plan.vegDish.tip})</span>`;
+                    row.appendChild(vegCell);
+                    
+                    // 操作
+                    const actionCell = document.createElement('td');
+                    const changeBtn = document.createElement('button');
+                    changeBtn.textContent = '换这一顿';
+                    changeBtn.addEventListener('click', function() {
+                        changeMeal(index);
+                    });
+                    
+                    if (plan.isLeftover) {
+                        changeBtn.disabled = true;
+                        changeBtn.title = "请先更换前晚晚餐，否则无法更换剩菜";
+                    }
+                    
+                    actionCell.appendChild(changeBtn);
+                    row.appendChild(actionCell);
+                    
+                    // 剩菜带饭
+                    const leftoverCell = document.createElement('td');
+                    if (plan.isLeftover) {
+                        leftoverCell.textContent = '🍱 剩菜带饭';
+                        leftoverCell.classList.add('leftover');
+                    }
+                    row.appendChild(leftoverCell);
+                    
+                    tbody.appendChild(row);
+                });
+            }
+            
+            // 更换单餐
+            function changeMeal(index) {
+                const plan = weeklyPlan[index];
+                
+                // 如果是剩菜，不能直接更换
+                if (plan.isLeftover) {
+                    alert('请先更换前晚晚餐，否则无法更换剩菜');
+                    return;
+                }
+                
+                // 如果是晚餐，先清空次日午餐的剩菜标记
+                if (plan.meal === '晚餐' && index < weeklyPlan.length - 1) {
+                    weeklyPlan[index + 1].isLeftover = false;
+                }
+                
+                // 获取新菜品
+                const isDinner = plan.meal === '晚餐';
+                const isEarlyWeek = index < 6; // 前3天(0-5索引)
+                const hasBraised = hasBraisedCheckbox.checked;
+                
+                // 更换主菜
+                if (isDinner && isEarlyWeek && hasBraised && braisedDishes.length > 0) {
+                    plan.meatDish = getRandomDish(braisedDishes, true);
+                } else {
+                    plan.meatDish = getRandomDish(meatDishes, false);
+                }
+                
+                // 更换副菜
+                plan.vegDish = getRandomDish(vegetableDishes, false);
+                
+                // 如果是晚餐且份数≥2，设置次日午餐为剩菜
+                if (plan.meal === '晚餐' && index < weeklyPlan.length - 1) {
+                    weeklyPlan[index + 1].isLeftover = true;
+                    weeklyPlan[index + 1].meatDish = plan.meatDish;
+                    weeklyPlan[index + 1].vegDish = plan.vegDish;
+                }
+                
+                // 更新界面
+                renderTable();
+                updateShoppingList();
+            }
+            
+            // 更新购物清单
+            function updateShoppingList() {
+                const meatItems = {};
+                const vegetableItems = {};
+                const seasoningItems = {};
+                
+                // 收集所有食材
+                weeklyPlan.forEach(plan => {
+                    if (!plan.isLeftover) {
+                        parseIngredients(plan.meatDish.meat, meatItems);
+                        parseIngredients(plan.vegDish.meat, meatItems);
+                        
+                        parseIngredients(plan.meatDish.vegetable, vegetableItems);
+                        parseIngredients(plan.vegDish.vegetable, vegetableItems);
+                        
+                        parseIngredients(plan.meatDish.seasoning, seasoningItems);
+                        parseIngredients(plan.vegDish.seasoning, seasoningItems);
+                    }
+                });
+                
+                // 渲染购物清单
+                renderShoppingList(meatList, meatItems, '斤', true);
+                renderShoppingList(vegetableList, vegetableItems, '', false);
+                renderShoppingList(seasoningList, seasoningItems, '', false);
+            }
+            
+            // 解析食材字符串
+            function parseIngredients(ingredientStr, itemsDict) {
+                if (!ingredientStr) return;
+                
+                const ingredients = ingredientStr.split(' ');
+                for (let i = 0; i < ingredients.length; i += 2) {
+                    if (i + 1 >= ingredients.length) break;
+                    
+                    const name = ingredients[i];
+                    const amountWithUnit = ingredients[i + 1];
+                    
+                    // 分离数值和单位
+                    const amount = parseFloat(amountWithUnit);
+                    const unit = amountWithUnit.replace(/[0-9.]/g, '');
+                    
+                    if (!itemsDict[name]) {
+                        itemsDict[name] = { amount: 0, unit: unit };
+                    }
+                    
+                    // 累加数量（乘以2是因为两人份）
+                    itemsDict[name].amount += amount * 2;
+                }
+            }
+            
+            // 渲染购物清单
+            function renderShoppingList(container, items, defaultUnit, isDecimal) {
+                container.innerHTML = '';
+                
+                if (Object.keys(items).length === 0) {
+                    container.innerHTML = '<div class="shopping-item">——</div>';
+                    return;
+                }
+                
+                for (const [name, data] of Object.entries(items)) {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'shopping-item';
+                    
+                    const amount = isDecimal ? data.amount.toFixed(1) : Math.round(data.amount);
+                    const unit = data.unit || defaultUnit;
+                    
+                    itemDiv.innerHTML = `
+                        <span>${name}</span>
+                        <span>${amount}${unit}</span>
+                    `;
+                    
+                    container.appendChild(itemDiv);
+                }
+            }
+            
+            // 启动初始化
+            init();
+        });
+    </script>
+</body>
+</html>
